@@ -80,6 +80,7 @@
         const defaultDailyRate = '{{ default_daily_rate|default('0.00') }}';
         const defaultHourlyRate = '{{ default_hourly_rate|default('0.00') }}';
         const defaultHourlyHoursPerBusinessDay = Number('{{ default_hourly_hours_per_business_day|default('8.00') }}');
+        const isEdit = {{ is_edit ? 'true' : 'false' }};
 
         const countBusinessDays = (year, month) => {
             const lastDay = new Date(year, month, 0).getDate();
@@ -269,7 +270,9 @@
         });
         bindRemoveButtons();
         updateDueDateFromIssueDate();
-        updateRateQuantitiesByReferenceMonth();
+        if (!isEdit) {
+            updateRateQuantitiesByReferenceMonth();
+        }
         calculateInvoiceTotal();
         })();
     </script>
