@@ -5,6 +5,9 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 [![CI](https://github.com/ricktg/my-invoice/actions/workflows/ci.yml/badge.svg)](https://github.com/ricktg/my-invoice/actions/workflows/ci.yml)
+[![Dependabot](https://img.shields.io/badge/Dependabot-Ativo-025E8C?logo=dependabot&logoColor=white)](https://github.com/ricktg/my-invoice/security/dependabot)
+[![Code Scanning](https://github.com/ricktg/my-invoice/actions/workflows/codeql.yml/badge.svg)](https://github.com/ricktg/my-invoice/actions/workflows/codeql.yml)
+[![Secret Scanning](https://github.com/ricktg/my-invoice/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/ricktg/my-invoice/actions/workflows/secret-scan.yml)
 [![Cobertura](https://codecov.io/gh/ricktg/my-invoice/graph/badge.svg)](https://codecov.io/gh/ricktg/my-invoice)
 [![Licença](https://img.shields.io/badge/Licen%C3%A7a-MIT-green.svg)](LICENSE)
 
