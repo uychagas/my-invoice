@@ -148,6 +148,77 @@ No PowerShell, use `scripts/dev.ps1`:
 .\scripts\dev.ps1 help
 ```
 
+## Upgrade da aplicação por versão
+
+Esta seção descreve como atualizar a aplicação para uma versão específica (tag Git), com scripts prontos para Bash e PowerShell.
+
+### Pré-requisitos
+
+- Docker + Docker Compose v2 instalados
+- Git instalado
+- Executar os comandos na raiz do repositório
+- Tag de versão existente no remoto (ex.: `v1.3.0`)
+
+### Script Bash (macOS/Linux)
+
+Arquivo: `scripts/upgrade.sh`
+
+```bash
+./scripts/upgrade.sh <versao>
+```
+
+Exemplo:
+
+```bash
+./scripts/upgrade.sh v1.3.0
+```
+
+### Script PowerShell (Windows/macOS/Linux)
+
+Arquivo: `scripts/upgrade.ps1`
+
+```powershell
+.\scripts\upgrade.ps1 -Version <versao>
+```
+
+Exemplo:
+
+```powershell
+.\scripts\upgrade.ps1 -Version v1.3.0
+```
+
+### O que os scripts fazem automaticamente
+
+1. Validam pré-requisitos (`git`, `docker`, `docker compose`).
+2. Buscam tags remotas (`git fetch --tags origin`).
+3. Criam branch local `upgrade/<versao>` a partir da tag.
+4. Sobem/atualizam containers (`docker compose up -d --build`).
+5. Instalam dependências (`composer install`).
+6. Executam migrations (`doctrine:migrations:migrate`).
+7. Compilam assets (`asset-map:compile`).
+8. Limpam cache (`cache:clear`).
+
+### Repositório com alterações locais (dirty)
+
+Por padrão, o script bloqueia upgrade se houver alterações não commitadas.
+
+Se você quiser executar mesmo assim:
+
+```bash
+./scripts/upgrade.sh v1.3.0 --allow-dirty
+```
+
+```powershell
+.\scripts\upgrade.ps1 -Version v1.3.0 -AllowDirty
+```
+
+### Fluxo recomendado antes de atualizar em produção
+
+1. Executar o upgrade em ambiente de homologação.
+2. Validar login, criação/edição de invoice, PDF e envio de e-mail.
+3. Conferir migrations aplicadas sem erro.
+4. Só então repetir o processo no ambiente de produção.
+
 ## Estrutura do projeto
 
 - `src/Entity` - entidades de domínio

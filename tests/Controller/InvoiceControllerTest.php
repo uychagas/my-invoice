@@ -87,7 +87,7 @@ final class InvoiceControllerTest extends DatabaseWebTestCase
         self::assertEquals((float) $expectedQuantity, (float) $invoice->getItems()->first()->getQuantity());
     }
 
-    public function testEditInvoiceSubmitRecalculatesHourlyQuantityUsingReferenceMonth(): void
+    public function testEditInvoiceSubmitKeepsManuallyTypedQuantity(): void
     {
         $client = static::createClient();
         $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
@@ -122,8 +122,6 @@ final class InvoiceControllerTest extends DatabaseWebTestCase
         self::assertResponseIsSuccessful();
 
         $referenceMonth = '2026-01';
-        $businessDays = $businessDayCalculator->countWeekdaysInMonth($referenceMonth);
-        $expectedQuantity = number_format($businessDays * 8.0, 2, '.', '');
 
         $form = $crawler->selectButton('Salvar invoice')->form([
             'invoice[number]' => 'INV-HOURLY-EDIT',
@@ -147,7 +145,63 @@ final class InvoiceControllerTest extends DatabaseWebTestCase
         $updated = $this->entityManager->getRepository(Invoice::class)->find($invoice->getId());
         self::assertInstanceOf(Invoice::class, $updated);
         self::assertSame($referenceMonth, $updated->getReferenceMonth());
-        self::assertEquals((float) $expectedQuantity, (float) $updated->getItems()->first()->getQuantity());
+        self::assertEquals(2.0, (float) $updated->getItems()->first()->getQuantity());
+    }
+
+    public function testEditDailyRateKeepsManuallyTypedQuantity(): void
+    {
+        $client = static::createClient();
+        $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
+
+        [$user, $issuer, $recipient] = $this->createUserAndCompanies();
+
+        $invoice = (new Invoice())
+            ->setOwner($user)
+            ->setNumber('INV-DAILY-EDIT')
+            ->setIssueDate(new \DateTimeImmutable('2026-03-05'))
+            ->setDueDate(new \DateTimeImmutable('2026-03-15'))
+            ->setIssuerCompany($issuer)
+            ->setRecipientCompany($recipient)
+            ->setCurrency('USD')
+            ->setReferenceMonth('2026-03');
+
+        $invoice->addItem(
+            (new InvoiceItem())
+                ->setBillingType(InvoiceItem::BILLING_DAILY_RATE)
+                ->setDescription('Daily service')
+                ->setQuantity('22')
+                ->setUnitPrice('850')
+        );
+
+        $this->entityManager->persist($invoice);
+        $this->entityManager->flush();
+
+        $client->loginUser($user);
+        $crawler = $client->request('GET', sprintf('/invoices/%d/edit', $invoice->getId()));
+        self::assertResponseIsSuccessful();
+
+        $form = $crawler->selectButton('Salvar invoice')->form([
+            'invoice[number]' => 'INV-DAILY-EDIT',
+            'invoice[issueDate]' => '2026-03-10',
+            'invoice[dueDate]' => '2026-03-20',
+            'invoice[issuerCompany]' => (string) $issuer->getId(),
+            'invoice[recipientCompany]' => (string) $recipient->getId(),
+            'invoice[currency]' => 'USD',
+            'invoice[referenceMonth]' => '2026-03',
+            'invoice[notes]' => '',
+            'invoice[items][0][billingType]' => InvoiceItem::BILLING_DAILY_RATE,
+            'invoice[items][0][description]' => 'Daily service',
+            'invoice[items][0][quantity]' => '11',
+            'invoice[items][0][unitPrice]' => '850',
+        ]);
+        $client->submit($form);
+
+        self::assertResponseRedirects();
+        $this->entityManager->clear();
+
+        $updated = $this->entityManager->getRepository(Invoice::class)->find($invoice->getId());
+        self::assertInstanceOf(Invoice::class, $updated);
+        self::assertEquals(11.0, (float) $updated->getItems()->first()->getQuantity());
     }
 
     /**

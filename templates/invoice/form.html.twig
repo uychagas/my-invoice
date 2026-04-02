@@ -2,6 +2,24 @@
 
 {% block title %}{{ title }}{% endblock %}
 
+{% macro render_invoice_item_fields(itemForm) %}
+    <div class="item-grid">
+        <div class="item-col">
+            {{ form_row(itemForm.billingType) }}
+        </div>
+        <div class="item-col">
+            {{ form_row(itemForm.unitPrice) }}
+        </div>
+        <div class="item-col item-col-full">
+            {{ form_row(itemForm.description) }}
+        </div>
+        <div class="item-col">
+            {{ form_row(itemForm.quantity) }}
+        </div>
+    </div>
+    {{ form_errors(itemForm) }}
+{% endmacro %}
+
 {% block body %}
     <div class="page-head">
         <h1>{{ title }}</h1>
@@ -41,10 +59,10 @@
 
             <section class="invoice-items-section">
                 <div class="section-title">Itens de cobrança</div>
-                <div id="items" data-index="{{ form.items|length }}" data-prototype="{{ form_widget(form.items.vars.prototype)|e('html_attr') }}">
+                <div id="items" data-index="{{ form.items|length }}" data-prototype="{{ _self.render_invoice_item_fields(form.items.vars.prototype)|e('html_attr') }}">
                     {% for itemForm in form.items %}
                         <div class="item-row">
-                            {{ form_row(itemForm) }}
+                            {{ _self.render_invoice_item_fields(itemForm) }}
                             <button class="btn btn-danger item-remove" type="button">Excluir item</button>
                         </div>
                     {% endfor %}
@@ -150,6 +168,9 @@
         };
 
         const updateRateQuantitiesByReferenceMonth = () => {
+            if (isEdit) {
+                return;
+            }
             if (!referenceMonthInput) {
                 return;
             }
@@ -252,7 +273,9 @@
                     applyQuantityFieldRules(row);
                     applyDefaultUnitPriceByType(row);
                 }
-                updateRateQuantitiesByReferenceMonth();
+                if (!isEdit) {
+                    updateRateQuantitiesByReferenceMonth();
+                }
             }
             if (
                 (target instanceof HTMLInputElement && (target.id.endsWith('_quantity') || target.id.endsWith('_unitPrice')))
