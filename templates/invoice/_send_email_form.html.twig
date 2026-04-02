@@ -1,0 +1,7 @@
+<form method="post" action="{{ path('app_invoice_send_email', {id: invoice.id}) }}" class="inline-form">
+    <input type="hidden" name="_token" value="{{ csrf_token('send_invoice_email_' ~ invoice.id) }}">
+    <button class="icon-btn icon-btn-light" type="submit" aria-label="Enviar invoice por e-mail" title="Enviar por e-mail">
+        <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+        <span class="sr-only">Enviar por e-mail</span>
+    </button>
+</form>

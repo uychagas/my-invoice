@@ -1,0 +1,7 @@
+<form method="post" action="{{ path('app_invoice_delete', {id: invoice.id}) }}" onsubmit="return confirm('Tem certeza que deseja excluir esta invoice?');" class="inline-form">
+    <input type="hidden" name="_token" value="{{ csrf_token('delete_invoice_' ~ invoice.id) }}">
+    <button class="icon-btn icon-btn-danger" type="submit" aria-label="Excluir invoice" title="Excluir">
+        <i class="fa-solid fa-trash" aria-hidden="true"></i>
+        <span class="sr-only">Excluir</span>
+    </button>
+</form>

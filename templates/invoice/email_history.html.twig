@@ -1,0 +1,63 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Histórico de envios - {{ invoice.number }}{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <h1>Histórico de envios</h1>
+        <div class="invoice-actions">
+            <a class="btn btn-secondary" href="{{ path('app_invoice_index') }}">Voltar lista</a>
+            <a class="btn" href="{{ path('app_invoice_show', {id: invoice.id}) }}">Ver invoice</a>
+            {% include 'invoice/_send_email_form.html.twig' with { invoice: invoice } %}
+        </div>
+    </div>
+
+    <div class="card">
+        <p><strong>Invoice:</strong> {{ invoice.number }}</p>
+        <p><strong>Status atual:</strong>
+            {% if invoice.hasSuccessfulEmailDelivery %}
+                <span class="status-badge status-sent">Enviada</span>
+                {% if invoice.lastSuccessfulEmailSentAt %}
+                    ({{ invoice.lastSuccessfulEmailSentAt|date('Y-m-d H:i') }})
+                {% endif %}
+            {% else %}
+                <span class="status-badge status-pending">Pendente</span>
+            {% endif %}
+        </p>
+    </div>
+
+    <div class="card">
+        <table>
+            <thead>
+            <tr>
+                <th>Data/Hora</th>
+                <th>Destinatário</th>
+                <th>Assunto</th>
+                <th>Status</th>
+                <th>Erro</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for log in invoice.emailLogs %}
+                <tr>
+                    <td>{{ log.sentAt|date('Y-m-d H:i') }}</td>
+                    <td>{{ log.recipientEmail }}</td>
+                    <td>{{ log.subject }}</td>
+                    <td>
+                        {% if log.status == 'success' %}
+                            <span class="status-badge status-sent">Enviado</span>
+                        {% else %}
+                            <span class="status-badge status-failed">Falhou</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ log.errorMessage ?: '-' }}</td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="5">Nenhum envio registrado ainda.</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

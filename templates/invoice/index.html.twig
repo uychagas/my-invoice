@@ -1,0 +1,79 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Invoices{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <h1>Invoices</h1>
+        <a class="btn" href="{{ path('app_invoice_new') }}">Nova invoice</a>
+    </div>
+
+    <div class="card">
+        <table>
+            <thead>
+            <tr>
+                <th>Número</th>
+                <th>Emissão</th>
+                <th>Mês ref.</th>
+                <th>Emissor</th>
+                <th>Destinatário</th>
+                <th>Moeda</th>
+                <th>Total</th>
+                <th>Status envio</th>
+                <th>Ações</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for invoice in invoices %}
+                <tr>
+                    <td>{{ invoice.number }}</td>
+                    <td>{{ invoice.issueDate|date('Y-m-d') }}</td>
+                    <td>{{ invoice.referenceMonth }}</td>
+                    <td>{{ invoice.issuerCompany.name }}</td>
+                    <td>{{ invoice.recipientCompany.name }}</td>
+                    <td>{{ invoice.currency }}</td>
+                    <td>{{ invoice.totalAmount }}</td>
+                    <td>
+                        {% if invoice.hasSuccessfulEmailDelivery %}
+                            <span class="status-dot status-dot-green" title="Enviada" aria-label="Enviada"></span>
+                        {% else %}
+                            <span class="status-dot status-dot-amber" title="Pendente" aria-label="Pendente"></span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="action-compact">
+                            <a class="icon-btn icon-btn-light" href="{{ path('app_invoice_show', {id: invoice.id}) }}" aria-label="Ver invoice" title="Ver">
+                                <i class="fa-solid fa-eye" aria-hidden="true"></i>
+                                <span class="sr-only">Ver</span>
+                            </a>
+                            <details class="row-actions">
+                                <summary class="icon-btn icon-btn-light" aria-label="Mais ações" title="Mais ações">
+                                    <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
+                                    <span class="sr-only">Mais ações</span>
+                                </summary>
+                                <div class="row-actions-menu">
+                                    <a href="{{ path('app_invoice_email_history', {id: invoice.id}) }}">Histórico</a>
+                                    <a href="{{ path('app_invoice_pdf', {id: invoice.id}) }}" target="_blank">PDF</a>
+                                    <a href="{{ path('app_invoice_edit', {id: invoice.id}) }}">Editar</a>
+                                    <form method="post" action="{{ path('app_invoice_send_email', {id: invoice.id}) }}">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('send_invoice_email_' ~ invoice.id) }}">
+                                        <button type="submit" class="menu-link-btn">Enviar e-mail</button>
+                                    </form>
+                                    <form method="post" action="{{ path('app_invoice_delete', {id: invoice.id}) }}" onsubmit="return confirm('Tem certeza que deseja excluir esta invoice?');">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete_invoice_' ~ invoice.id) }}">
+                                        <button type="submit" class="menu-link-btn menu-link-danger">Excluir</button>
+                                    </form>
+                                </div>
+                            </details>
+                        </div>
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="9">Nenhuma invoice criada ainda.</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

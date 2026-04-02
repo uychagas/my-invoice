@@ -1,0 +1,27 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Perfil{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <h1>Perfil</h1>
+    </div>
+
+    <div class="card form-card">
+        <div class="section-title">Preferências de cobrança</div>
+        {{ form_start(form) }}
+            <div class="form-grid">
+                {{ form_row(form.jobDescription) }}
+            </div>
+            <div class="form-grid">
+                {{ form_row(form.defaultDailyRate) }}
+                {{ form_row(form.defaultDailyRateCurrency) }}
+            </div>
+
+            <div class="section-title">Segurança</div>
+            {{ form_row(form.newPassword) }}
+
+            <button class="btn" type="submit">Salvar alterações</button>
+        {{ form_end(form) }}
+    </div>
+{% endblock %}

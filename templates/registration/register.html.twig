@@ -1,0 +1,41 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Criar conta{% endblock %}
+
+{% block body %}
+    <div class="auth-card auth-card-wide register-stack">
+        <h1>Criar conta</h1>
+        {{ form_start(registrationForm) }}
+            <div class="card form-card">
+                <div class="section-title">Acesso</div>
+                <div class="form-grid register-form-grid">
+                    {{ form_row(registrationForm.email) }}
+                </div>
+            </div>
+
+            <div class="card form-card">
+                <div class="section-title">Senha</div>
+                <div class="register-password-fields">
+                    {{ form_row(registrationForm.plainPassword.first) }}
+                    {{ form_row(registrationForm.plainPassword.second) }}
+                </div>
+            </div>
+
+            <div class="card form-card">
+                <div class="section-title">Serviço</div>
+                <div class="register-form-grid">
+                    {{ form_row(registrationForm.jobDescription) }}
+                    <div class="form-grid">
+                    {{ form_row(registrationForm.defaultDailyRate) }}
+                    {{ form_row(registrationForm.defaultDailyRateCurrency) }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="register-form-actions">
+                <button class="btn" type="submit">Registrar</button>
+            </div>
+        {{ form_end(registrationForm) }}
+        <p class="muted">Já possui conta? <a href="{{ path('app_login') }}">Entrar</a></p>
+    </div>
+{% endblock %}

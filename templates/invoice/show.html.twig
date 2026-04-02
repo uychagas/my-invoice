@@ -1,0 +1,195 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Invoice {{ invoice.number }}{% endblock %}
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .invoice-doc {
+            max-width: 780px !important;
+            margin: 0 auto !important;
+            background: #fff !important;
+            border: 1px solid #d0d0d0 !important;
+            border-radius: 2px !important;
+            padding: 44px 52px !important;
+            box-shadow: none !important;
+            font-family: Helvetica, Arial, sans-serif !important;
+        }
+
+        .invoice-doc-header h2 {
+            margin: 0 0 10px !important;
+            font-size: 36px !important;
+            color: #2a5d77 !important;
+            font-weight: 500 !important;
+        }
+
+        .invoice-doc-header p {
+            margin: 1px 0 !important;
+            font-size: 19px !important;
+            color: #212121 !important;
+        }
+
+        .invoice-doc-header {
+            padding-bottom: 22px !important;
+            border-bottom: 2px solid #d7d7d7 !important;
+            margin-bottom: 18px !important;
+        }
+
+        .invoice-doc-parties {
+            gap: 20px !important;
+            margin-bottom: 24px !important;
+        }
+
+        .invoice-party h3,
+        .invoice-services h3,
+        .invoice-total-due h3 {
+            margin: 0 0 8px !important;
+            color: #2a5d77 !important;
+            font-size: 33px !important;
+            font-weight: 500 !important;
+        }
+
+        .invoice-party p {
+            margin: 2px 0 !important;
+            font-size: 17px !important;
+            line-height: 1.4 !important;
+            color: #222 !important;
+        }
+
+        .invoice-doc-table th,
+        .invoice-doc-table td {
+            border: 1.2px solid #6a6a6a !important;
+            padding: 4px 7px !important;
+            font-size: 16px !important;
+            line-height: 1.2 !important;
+        }
+
+        .invoice-doc-table th {
+            background: #f7f7f7 !important;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    {% set periodStart = (invoice.referenceMonth ~ '-01')|date('F j, Y') %}
+    {% set periodEnd = (invoice.referenceMonth ~ '-01')|date_modify('+1 month -1 day')|date('F j, Y') %}
+
+    <div class="page-head invoice-view-head">
+        <h1>Invoice {{ invoice.number }}</h1>
+        <div class="invoice-actions invoice-actions-compact">
+            <a class="icon-btn icon-btn-light" href="{{ path('app_invoice_index') }}" aria-label="Voltar" title="Voltar">
+                <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+                <span class="sr-only">Voltar</span>
+            </a>
+            <a class="icon-btn icon-btn-light" href="{{ path('app_invoice_email_history', {id: invoice.id}) }}" aria-label="Ver histórico de envio" title="Histórico">
+                <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>
+                <span class="sr-only">Histórico</span>
+            </a>
+            {% include 'invoice/_send_email_form.html.twig' with { invoice: invoice } %}
+            <a class="icon-btn icon-btn-light" href="{{ path('app_invoice_pdf', {id: invoice.id}) }}" target="_blank" aria-label="Gerar PDF" title="PDF">
+                <i class="fa-solid fa-file-pdf" aria-hidden="true"></i>
+                <span class="sr-only">PDF</span>
+            </a>
+            <a class="icon-btn icon-btn-primary" href="{{ path('app_invoice_edit', {id: invoice.id}) }}" aria-label="Editar" title="Editar">
+                <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+                <span class="sr-only">Editar</span>
+            </a>
+            {% include 'invoice/_delete_form.html.twig' with { invoice: invoice } %}
+        </div>
+    </div>
+
+    <article class="invoice-doc">
+        <header class="invoice-doc-header">
+            <h2>INVOICE</h2>
+            <p><strong>Invoice Number:</strong> {{ invoice.number }}</p>
+            <p><strong>Invoice Date:</strong> {{ invoice.issueDate|date('F j, Y') }}</p>
+            <p><strong>Service Period:</strong> {{ periodStart }} – {{ periodEnd }}</p>
+            <p>
+                <strong>Email Status:</strong>
+                {% if invoice.hasSuccessfulEmailDelivery %}
+                    <span class="status-badge status-sent">Enviada</span>
+                    {% if invoice.lastSuccessfulEmailSentAt %}
+                        ({{ invoice.lastSuccessfulEmailSentAt|date('Y-m-d H:i') }})
+                    {% endif %}
+                {% else %}
+                    <span class="status-badge status-pending">Pendente</span>
+                {% endif %}
+            </p>
+        </header>
+
+        <section class="invoice-doc-parties">
+            <div class="invoice-party">
+                <h3>From</h3>
+                <p><strong>{{ invoice.issuerCompany.name }}</strong></p>
+                {% if invoice.issuerCompany.address %}
+                    <p>{{ invoice.issuerCompany.address|nl2br }}</p>
+                {% endif %}
+                {% if invoice.issuerCompany.taxId %}
+                    <p>Tax ID: {{ invoice.issuerCompany.taxId }}</p>
+                {% endif %}
+                {% if invoice.issuerCompany.email %}
+                    <p>Email: {{ invoice.issuerCompany.email }}</p>
+                {% endif %}
+            </div>
+            <div class="invoice-party">
+                <h3>Bill To</h3>
+                <p><strong>{{ invoice.recipientCompany.name }}</strong></p>
+                <p>Attn: Finance / Accounts Payable</p>
+                {% if invoice.recipientCompany.address %}
+                    <p>{{ invoice.recipientCompany.address|nl2br }}</p>
+                {% endif %}
+                {% if invoice.recipientCompany.taxId %}
+                    <p>Tax ID: {{ invoice.recipientCompany.taxId }}</p>
+                {% endif %}
+                {% if invoice.recipientCompany.email %}
+                    <p>Email: {{ invoice.recipientCompany.email }}</p>
+                {% endif %}
+            </div>
+        </section>
+
+        <section class="invoice-services">
+            <h3>Services Rendered</h3>
+            <table class="invoice-doc-table">
+                <thead>
+                <tr>
+                    <th>Description</th>
+                    <th class="num">Quantity</th>
+                    <th class="num">Daily Rate ({{ invoice.currency }})</th>
+                    <th class="num">Amount ({{ invoice.currency }})</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for item in invoice.items %}
+                    <tr>
+                        <td>{{ item.description }}</td>
+                        <td class="num">{{ item.billingType == 'daily_rate' ? item.quantity|replace({'.00': ''}) : item.quantity }}</td>
+                        <td class="num">{{ item.unitPrice|number_format(2, '.', ',') }}</td>
+                        <td class="num">{{ item.totalAmount|number_format(2, '.', ',') }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </section>
+
+        <section class="invoice-total-due">
+            <h3>Total Due</h3>
+            <p>{{ invoice.currency }} {{ invoice.totalAmount|number_format(2, '.', ',') }}</p>
+        </section>
+
+        <footer class="invoice-terms">
+            <p><strong>Payment Terms</strong></p>
+            <p>Payment due within <strong>10 days</strong> of invoice submission.</p>
+            <p>Due date: {{ invoice.dueDate ? invoice.dueDate|date('F j, Y') : '-' }}</p>
+        </footer>
+
+        <div class="invoice-history-cta">
+            <a class="btn btn-secondary" href="{{ path('app_invoice_email_history', {id: invoice.id}) }}">Ver histórico de envios</a>
+        </div>
+    </article>
+
+    {% if invoice.notes %}
+        <div class="card invoice-notes-card">
+            <h3>Observações</h3>
+            <p>{{ invoice.notes|nl2br }}</p>
+        </div>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,194 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <h1>{{ title }}</h1>
+        <div class="invoice-actions">
+            <a class="btn btn-secondary" href="{{ path('app_invoice_index') }}">Voltar</a>
+            {% if is_edit and invoice %}
+                {% include 'invoice/_delete_form.html.twig' with {invoice: invoice} %}
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card form-card">
+        {{ form_start(form) }}
+            {{ form_errors(form) }}
+            <div class="form-grid">
+                {{ form_row(form.number) }}
+                {{ form_row(form.issueDate) }}
+                {{ form_row(form.dueDate) }}
+                {{ form_row(form.issuerCompany) }}
+                {{ form_row(form.recipientCompany) }}
+                {{ form_row(form.currency) }}
+                <div>
+                    <label for="{{ form.referenceMonth.vars.id }}">Mês de referência</label>
+                    <input
+                        type="month"
+                        id="{{ form.referenceMonth.vars.id }}"
+                        name="{{ form.referenceMonth.vars.full_name }}"
+                        value="{{ form.referenceMonth.vars.value }}"
+                        required
+                    >
+                    {{ form_errors(form.referenceMonth) }}
+                </div>
+            </div>
+            <div class="invoice-notes-field">
+                {{ form_row(form.notes) }}
+            </div>
+
+            <section class="invoice-items-section">
+                <div class="section-title">Itens de cobrança</div>
+                <div id="items" data-index="{{ form.items|length }}" data-prototype="{{ form_widget(form.items.vars.prototype)|e('html_attr') }}">
+                    {% for itemForm in form.items %}
+                        <div class="item-row">
+                            {{ form_row(itemForm) }}
+                            <button class="btn btn-danger item-remove" type="button">Excluir item</button>
+                        </div>
+                    {% endfor %}
+                </div>
+            </section>
+            <div class="invoice-form-footer">
+                <div class="invoice-live-total">
+                    <span class="total-label">Total da invoice</span>
+                    <div class="total-amount-line">
+                        <span id="invoice-total-currency">{{ form.currency.vars.value ?: 'CAD' }}</span>
+                        <strong id="invoice-total-preview">0.00</strong>
+                    </div>
+                </div>
+                <div class="invoice-actions">
+                    <button class="btn btn-secondary" type="button" id="add-item">Adicionar item</button>
+                    <button class="btn" type="submit">Salvar invoice</button>
+                </div>
+            </div>
+            {{ form_widget(form._token) }}
+        {{ form_end(form, {render_rest: false}) }}
+    </div>
+
+    <script>
+        const container = document.getElementById('items');
+        const addButton = document.getElementById('add-item');
+        const referenceMonthInput = document.getElementById('invoice_referenceMonth');
+        const issueDateInput = document.getElementById('invoice_issueDate');
+        const dueDateInput = document.getElementById('invoice_dueDate');
+        const currencyInput = document.getElementById('invoice_currency');
+        const totalPreview = document.getElementById('invoice-total-preview');
+        const totalCurrency = document.getElementById('invoice-total-currency');
+
+        const countBusinessDays = (year, month) => {
+            const lastDay = new Date(year, month, 0).getDate();
+            let count = 0;
+            for (let day = 1; day <= lastDay; day += 1) {
+                const weekDay = new Date(year, month - 1, day).getDay();
+                if (weekDay !== 0 && weekDay !== 6) {
+                    count += 1;
+                }
+            }
+            return count;
+        };
+
+        const updateDailyRateQuantities = () => {
+            if (!referenceMonthInput || !/^\d{4}-\d{2}$/.test(referenceMonthInput.value)) {
+                return;
+            }
+            const [year, month] = referenceMonthInput.value.split('-').map(Number);
+            const businessDays = String(countBusinessDays(year, month));
+            const itemBlocks = container.querySelectorAll('.item-row');
+
+            itemBlocks.forEach((row) => {
+                const typeField = row.querySelector('select[id$="_billingType"]');
+                const quantityField = row.querySelector('input[id$="_quantity"]');
+                if (typeField && quantityField && typeField.value === 'daily_rate') {
+                    quantityField.value = businessDays;
+                }
+            });
+        };
+
+        const countDailyRateItems = () => {
+            let count = 0;
+            container.querySelectorAll('select[id$="_billingType"]').forEach((field) => {
+                if (field.value === 'daily_rate') {
+                    count += 1;
+                }
+            });
+            return count;
+        };
+
+        const calculateInvoiceTotal = () => {
+            let total = 0;
+            container.querySelectorAll('.item-row').forEach((row) => {
+                const quantityField = row.querySelector('input[id$="_quantity"]');
+                const unitPriceField = row.querySelector('input[id$="_unitPrice"]');
+                const quantity = Number(quantityField?.value || 0);
+                const unitPrice = Number(unitPriceField?.value || 0);
+                total += quantity * unitPrice;
+            });
+            totalPreview.textContent = total.toFixed(2);
+        };
+
+        const updateDueDateFromIssueDate = () => {
+            if (!issueDateInput || !dueDateInput || !issueDateInput.value) {
+                return;
+            }
+            const issueDate = new Date(`${issueDateInput.value}T00:00:00`);
+            issueDate.setDate(issueDate.getDate() + 10);
+            dueDateInput.value = issueDate.toISOString().slice(0, 10);
+        };
+
+        const bindRemoveButtons = () => {
+            container.querySelectorAll('.item-remove').forEach((button) => {
+                if (button.dataset.bound === '1') {
+                    return;
+                }
+                button.dataset.bound = '1';
+                button.addEventListener('click', () => {
+                    const row = button.closest('.item-row');
+                    row?.remove();
+                    updateDailyRateQuantities();
+                    calculateInvoiceTotal();
+                });
+            });
+        };
+
+        addButton?.addEventListener('click', () => {
+            const index = Number(container.dataset.index);
+            const prototype = container.dataset.prototype.replace(/__name__/g, String(index));
+            const row = document.createElement('div');
+            row.className = 'item-row';
+            row.innerHTML = `${prototype}<button class="btn btn-danger item-remove" type="button">Excluir item</button>`;
+            container.appendChild(row);
+            container.dataset.index = String(index + 1);
+            updateDailyRateQuantities();
+            bindRemoveButtons();
+            calculateInvoiceTotal();
+        });
+
+        referenceMonthInput?.addEventListener('change', updateDailyRateQuantities);
+        issueDateInput?.addEventListener('change', updateDueDateFromIssueDate);
+        container?.addEventListener('change', (event) => {
+            const target = event.target;
+            if (target instanceof HTMLSelectElement && target.id.endsWith('_billingType')) {
+                if (target.value === 'daily_rate' && countDailyRateItems() > 1) {
+                    alert('A invoice pode ter apenas um item Daily rate.');
+                    target.value = 'one_off';
+                }
+                updateDailyRateQuantities();
+            }
+            if (
+                (target instanceof HTMLInputElement && (target.id.endsWith('_quantity') || target.id.endsWith('_unitPrice')))
+                || (target instanceof HTMLSelectElement && target.id.endsWith('_billingType'))
+            ) {
+                calculateInvoiceTotal();
+            }
+        });
+        currencyInput?.addEventListener('change', () => {
+            totalCurrency.textContent = currencyInput.value || 'CAD';
+        });
+        bindRemoveButtons();
+        updateDueDateFromIssueDate();
+        updateDailyRateQuantities();
+        calculateInvoiceTotal();
+    </script>
+{% endblock %}
