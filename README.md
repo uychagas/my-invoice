@@ -5,6 +5,7 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 [![CI](https://github.com/ricktg/my-invoice/actions/workflows/ci.yml/badge.svg)](https://github.com/ricktg/my-invoice/actions/workflows/ci.yml)
+[![Última release](https://img.shields.io/github/v/release/ricktg/my-invoice?display_name=tag&sort=semver)](https://github.com/ricktg/my-invoice/releases)
 [![Dependabot](https://img.shields.io/badge/Dependabot-Ativo-025E8C?logo=dependabot&logoColor=white)](https://github.com/ricktg/my-invoice/security/dependabot)
 [![Code Scanning](https://github.com/ricktg/my-invoice/actions/workflows/codeql.yml/badge.svg)](https://github.com/ricktg/my-invoice/actions/workflows/codeql.yml)
 [![Secret Scanning](https://github.com/ricktg/my-invoice/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/ricktg/my-invoice/actions/workflows/secret-scan.yml)
