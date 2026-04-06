@@ -384,6 +384,19 @@ td {
     margin-bottom: 6px;
 }
 
+.invoice-local-preview {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.invoice-local-preview small {
+    display: block;
+    margin-top: 6px;
+    font-size: 11px;
+    opacity: 0.9;
+}
+
 .total-amount-line {
     display: flex;
     align-items: baseline;

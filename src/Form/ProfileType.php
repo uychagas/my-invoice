@@ -70,6 +70,18 @@ class ProfileType extends AbstractType
                     'GBP' => 'GBP',
                 ],
             ])
+            ->add('localCurrency', ChoiceType::class, [
+                'label' => 'Moeda local (informativo)',
+                'required' => false,
+                'placeholder' => 'Selecione',
+                'choices' => [
+                    'BRL' => 'BRL',
+                    'USD' => 'USD',
+                    'CAD' => 'CAD',
+                    'EUR' => 'EUR',
+                    'GBP' => 'GBP',
+                ],
+            ])
             ->add('newPassword', RepeatedType::class, [
                 'type' => PasswordType::class,
                 'invalid_message' => 'As senhas não conferem.',

@@ -17,6 +17,7 @@ final class ProfileTypeTest extends TypeTestCaseWithValidator
             'defaultRateType' => 'hourly_rate',
             'defaultHourlyHoursPerBusinessDay' => '8.00',
             'defaultDailyRateCurrency' => 'USD',
+            'localCurrency' => 'BRL',
             'newPassword' => [
                 'first' => '',
                 'second' => '',
@@ -33,6 +34,7 @@ final class ProfileTypeTest extends TypeTestCaseWithValidator
         self::assertSame('120', (string) $form->get('defaultRateValue')->getData());
         self::assertSame('hourly_rate', $form->get('defaultRateType')->getData());
         self::assertSame('8', $model->getDefaultHourlyHoursPerBusinessDay());
+        self::assertSame('BRL', $model->getLocalCurrency());
         self::assertSame('', (string) $form->get('newPassword')->getData());
     }
 
@@ -59,6 +61,7 @@ final class ProfileTypeTest extends TypeTestCaseWithValidator
             'defaultRateType' => 'hourly_rate',
             'defaultHourlyHoursPerBusinessDay' => '',
             'defaultDailyRateCurrency' => 'USD',
+            'localCurrency' => 'BRL',
             'newPassword' => [
                 'first' => '',
                 'second' => '',
