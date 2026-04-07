@@ -177,6 +177,22 @@
             <p>{{ invoice.currency }} {{ invoice.totalAmount|number_format(2, '.', ',') }}</p>
         </section>
 
+        {% if local_currency_conversion %}
+            <section class="invoice-total-due" style="margin-top: 12px;">
+                <h3 style="font-size: 22px !important;">Total estimado na sua moeda local (informativo)</h3>
+                <p style="font-size: 24px !important;">
+                    {{ local_currency_conversion.to }} {{ local_currency_conversion.converted_amount|number_format(2, '.', ',') }}
+                </p>
+                <p style="font-size: 14px !important; margin-top: 6px;">
+                    Câmbio aproximado: 1 {{ local_currency_conversion.from }} = {{ local_currency_conversion.rate }} {{ local_currency_conversion.to }}
+                    {% if local_currency_conversion.date %}
+                        ({{ local_currency_conversion.date }})
+                    {% endif %}
+                    via {{ local_currency_conversion.provider }}
+                </p>
+            </section>
+        {% endif %}
+
         <footer class="invoice-terms">
             <p><strong>Payment Terms</strong></p>
             <p>Payment due within <strong>10 days</strong> of invoice submission.</p>

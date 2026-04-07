@@ -50,6 +50,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 3, nullable: true)]
     private ?string $defaultDailyRateCurrency = null;
 
+    #[ORM\Column(length: 3, nullable: true)]
+    private ?string $localCurrency = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -167,6 +170,20 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setDefaultHourlyHoursPerBusinessDay(?string $defaultHourlyHoursPerBusinessDay): self
     {
         $this->defaultHourlyHoursPerBusinessDay = $defaultHourlyHoursPerBusinessDay;
+
+        return $this;
+    }
+
+    public function getLocalCurrency(): ?string
+    {
+        return $this->localCurrency;
+    }
+
+    public function setLocalCurrency(?string $localCurrency): self
+    {
+        $this->localCurrency = $localCurrency !== null && $localCurrency !== ''
+            ? mb_strtoupper(trim($localCurrency))
+            : null;
 
         return $this;
     }

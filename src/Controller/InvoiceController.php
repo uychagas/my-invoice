@@ -12,10 +12,12 @@ use App\Form\InvoiceType;
 use App\Repository\CompanyRepository;
 use App\Repository\InvoiceRepository;
 use App\Service\BusinessDayCalculator;
+use App\Service\CurrencyConversionService;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -112,6 +114,7 @@ final class InvoiceController extends AbstractController
             'default_daily_rate' => $defaultDailyRate,
             'default_hourly_rate' => $defaultHourlyRate,
             'default_hourly_hours_per_business_day' => number_format($defaultHourlyHoursPerBusinessDay, 2, '.', ''),
+            'user_local_currency' => $user->getLocalCurrency(),
         ]);
     }
 
@@ -153,11 +156,12 @@ final class InvoiceController extends AbstractController
             'default_daily_rate' => $user->getDefaultDailyRate() ?? '0.00',
             'default_hourly_rate' => $user->getDefaultHourlyRate() ?? '0.00',
             'default_hourly_hours_per_business_day' => $user->getDefaultHourlyHoursPerBusinessDay() ?? '8.00',
+            'user_local_currency' => $user->getLocalCurrency(),
         ]);
     }
 
     #[Route('/{id}', name: 'app_invoice_show', requirements: ['id' => '\d+'])]
-    public function show(Invoice $invoice): Response
+    public function show(Invoice $invoice, CurrencyConversionService $currencyConversionService): Response
     {
         /** @var User $user */
         $user = $this->getUser();
@@ -165,9 +169,37 @@ final class InvoiceController extends AbstractController
             throw $this->createAccessDeniedException();
         }
 
+        $localCurrencyConversion = null;
+        $localCurrency = $user->getLocalCurrency();
+        if ($localCurrency !== null && $localCurrency !== '' && $localCurrency !== $invoice->getCurrency()) {
+            $localCurrencyConversion = $currencyConversionService->convert(
+                $invoice->getTotalAmount(),
+                $invoice->getCurrency(),
+                $localCurrency
+            );
+        }
+
         return $this->render('invoice/show.html.twig', [
             'invoice' => $invoice,
+            'local_currency_conversion' => $localCurrencyConversion,
         ]);
+    }
+
+    #[Route('/fx-preview', name: 'app_invoice_fx_preview', methods: ['GET'])]
+    public function fxPreview(Request $request, CurrencyConversionService $currencyConversionService): JsonResponse
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+        $localCurrency = $user->getLocalCurrency();
+        if ($localCurrency === null || $localCurrency === '') {
+            return $this->json(['conversion' => null]);
+        }
+
+        $amount = (string) $request->query->get('amount', '0');
+        $fromCurrency = (string) $request->query->get('from', '');
+        $conversion = $currencyConversionService->convert($amount, $fromCurrency, $localCurrency);
+
+        return $this->json(['conversion' => $conversion]);
     }
 
     #[Route('/{id}/email-history', name: 'app_invoice_email_history', requirements: ['id' => '\d+'], methods: ['GET'])]

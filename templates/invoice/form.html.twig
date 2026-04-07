@@ -75,6 +75,16 @@
                         <span id="invoice-total-currency">{{ form.currency.vars.value ?: 'CAD' }}</span>
                         <strong id="invoice-total-preview">0.00</strong>
                     </div>
+                    {% if user_local_currency %}
+                        <div class="invoice-local-preview" id="invoice-local-preview-box">
+                            <span class="total-label">Estimativa na sua moeda local ({{ user_local_currency }})</span>
+                            <div class="total-amount-line">
+                                <span id="invoice-local-currency">{{ user_local_currency }}</span>
+                                <strong id="invoice-local-preview">-</strong>
+                            </div>
+                            <small id="invoice-local-rate-note"></small>
+                        </div>
+                    {% endif %}
                 </div>
                 <div class="invoice-actions">
                     <button class="btn btn-secondary" type="button" id="add-item">Adicionar item</button>
@@ -95,10 +105,16 @@
         const currencyInput = document.getElementById('invoice_currency');
         const totalPreview = document.getElementById('invoice-total-preview');
         const totalCurrency = document.getElementById('invoice-total-currency');
+        const localPreview = document.getElementById('invoice-local-preview');
+        const localRateNote = document.getElementById('invoice-local-rate-note');
+        const localPreviewBox = document.getElementById('invoice-local-preview-box');
         const defaultDailyRate = '{{ default_daily_rate|default('0.00') }}';
         const defaultHourlyRate = '{{ default_hourly_rate|default('0.00') }}';
         const defaultHourlyHoursPerBusinessDay = Number('{{ default_hourly_hours_per_business_day|default('8.00') }}');
+        const userLocalCurrency = '{{ user_local_currency|default('') }}';
+        const fxPreviewUrl = '{{ path('app_invoice_fx_preview') }}';
         const isEdit = {{ is_edit ? 'true' : 'false' }};
+        let fxDebounceTimer = null;
 
         const countBusinessDays = (year, month) => {
             const lastDay = new Date(year, month, 0).getDate();
@@ -217,6 +233,59 @@
                 total += quantity * unitPrice;
             });
             totalPreview.textContent = total.toFixed(2);
+            refreshLocalCurrencyPreview(total);
+        };
+
+        const refreshLocalCurrencyPreview = (totalValue) => {
+            if (!localPreview || !userLocalCurrency || !currencyInput) {
+                return;
+            }
+
+            const fromCurrency = (currencyInput.value || '').toUpperCase();
+            if (!fromCurrency || fromCurrency === userLocalCurrency || totalValue <= 0) {
+                localPreview.textContent = '-';
+                if (localRateNote) {
+                    localRateNote.textContent = '';
+                }
+                return;
+            }
+
+            if (fxDebounceTimer) {
+                clearTimeout(fxDebounceTimer);
+            }
+
+            fxDebounceTimer = setTimeout(async () => {
+                try {
+                    const params = new URLSearchParams({
+                        amount: totalValue.toFixed(2),
+                        from: fromCurrency,
+                    });
+                    const response = await fetch(`${fxPreviewUrl}?${params.toString()}`, {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    });
+                    if (!response.ok) {
+                        return;
+                    }
+                    const data = await response.json();
+                    if (!data.conversion) {
+                        localPreview.textContent = '-';
+                        if (localRateNote) {
+                            localRateNote.textContent = '';
+                        }
+                        return;
+                    }
+
+                    localPreview.textContent = Number(data.conversion.converted_amount).toFixed(2);
+                    if (localRateNote) {
+                        const datePart = data.conversion.date ? ` (${data.conversion.date})` : '';
+                        localRateNote.textContent = `1 ${data.conversion.from} = ${data.conversion.rate} ${data.conversion.to}${datePart}`;
+                    }
+                } catch (e) {
+                    if (localPreviewBox) {
+                        localPreviewBox.style.opacity = '0.9';
+                    }
+                }
+            }, 350);
         };
 
         const updateDueDateFromIssueDate = () => {
@@ -286,6 +355,8 @@
         });
         currencyInput?.addEventListener('change', () => {
             totalCurrency.textContent = currencyInput.value || 'CAD';
+            const currentTotal = Number(totalPreview?.textContent || 0);
+            refreshLocalCurrencyPreview(currentTotal);
         });
         container?.querySelectorAll('.item-row').forEach((row) => {
             applyQuantityFieldRules(row);
